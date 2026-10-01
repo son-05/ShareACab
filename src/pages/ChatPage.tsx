@@ -3,6 +3,7 @@ import { Send, MessageSquare } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import type { ChatMessage } from '../types';
 import { realtimeSync } from '../services/broadcastService';
+import { subscribeToChatMessages } from '../services/firebaseService';
 
 interface ChatPageProps {
   onBackToExplore: () => void;
@@ -32,19 +33,32 @@ export const ChatPage: React.FC<ChatPageProps> = ({ onBackToExplore }) => {
   const currentRideId = activeChatRideId || (myRides.length > 0 ? myRides[0].id : null);
   const currentRide = currentRideId ? getRide(currentRideId) : null;
 
-  // Load and subscribe to real-time chat updates
+  // Load and subscribe to real-time chat updates via Firebase & Relay
   useEffect(() => {
     if (currentRideId) {
       setMessages(getRideMessages(currentRideId));
+
+      // Live subscription directly to Firebase Realtime Database
+      const unsubFirebase = subscribeToChatMessages(currentRideId, (firebaseMsgs) => {
+        if (firebaseMsgs && Array.isArray(firebaseMsgs) && firebaseMsgs.length > 0) {
+          setMessages(firebaseMsgs);
+        }
+      });
+
+      const unsubRelay = realtimeSync.on('MESSAGES_UPDATED', (data: { rideId: string; message: ChatMessage }) => {
+        if (data && data.rideId === currentRideId) {
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === data.message.id)) return prev;
+            return [...prev, data.message];
+          });
+        }
+      });
+
+      return () => {
+        unsubFirebase();
+        unsubRelay();
+      };
     }
-
-    const unsub = realtimeSync.on('MESSAGES_UPDATED', (data: { rideId: string; message: ChatMessage }) => {
-      if (data && data.rideId === currentRideId) {
-        setMessages((prev) => [...prev, data.message]);
-      }
-    });
-
-    return () => unsub();
   }, [currentRideId]);
 
   useEffect(() => {

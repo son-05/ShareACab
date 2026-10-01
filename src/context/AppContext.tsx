@@ -11,6 +11,12 @@ import {
   resetToDefaults,
 } from '../services/storageService';
 import { realtimeSync } from '../services/broadcastService';
+import {
+  initFirebaseDatabase,
+  subscribeToRides,
+  updateRidesInFirebase,
+  sendChatMessageToFirebase,
+} from '../services/firebaseService';
 
 interface ToastState {
   message: string;
@@ -64,8 +70,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, 3500);
   };
 
-  // Sync state with storage and other browser tabs/windows
+  // Sync state with storage, Firebase, and local broadcast
   useEffect(() => {
+    initFirebaseDatabase();
+
+    const unsubFirebaseRides = subscribeToRides((firebaseRides) => {
+      if (firebaseRides && Array.isArray(firebaseRides) && firebaseRides.length > 0) {
+        setRidesState(firebaseRides);
+        saveRides(firebaseRides);
+      }
+    });
+
     const unsubRideUpdate = realtimeSync.on('RIDE_UPDATED', (updatedRides) => {
       if (updatedRides) {
         setRidesState(updatedRides);
@@ -78,6 +93,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
 
     return () => {
+      unsubFirebaseRides();
       unsubRideUpdate();
       unsubBroadcast();
     };
@@ -137,6 +153,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [completeRide, ...rides];
     setRidesState(updated);
     saveRides(updated);
+    updateRidesInFirebase(updated);
 
     // Initial system chat message
     saveMessageForRide(newId, {
@@ -199,6 +216,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updatedRides = rides.map((r) => (r.id === rideId ? updatedRide : r));
     setRidesState(updatedRides);
     saveRides(updatedRides);
+    updateRidesInFirebase(updatedRides);
 
     // Post to chat
     saveMessageForRide(rideId, {
@@ -230,6 +248,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const updated = rides.filter((r) => r.id !== rideId);
       setRidesState(updated);
       saveRides(updated);
+      updateRidesInFirebase(updated);
       realtimeSync.broadcast('RIDE_UPDATED', updated);
       showToast('You cancelled your hosted ride pool.', 'info');
       return;
@@ -245,6 +264,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updatedRides = rides.map((r) => (r.id === rideId ? updatedRide : r));
     setRidesState(updatedRides);
     saveRides(updatedRides);
+    updateRidesInFirebase(updatedRides);
 
     saveMessageForRide(rideId, {
       id: `msg_${Date.now()}`,
@@ -280,6 +300,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       quickActionType: quickType,
     };
     saveMessageForRide(rideId, newMsg);
+    sendChatMessageToFirebase(rideId, newMsg);
     realtimeSync.broadcast('MESSAGES_UPDATED', { rideId, message: newMsg });
   };
 

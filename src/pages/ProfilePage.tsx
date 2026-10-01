@@ -237,21 +237,21 @@ export const ProfilePage: React.FC = () => {
         )}
       </div>
 
-      {/* Realtime Relay Connection Settings */}
+      {/* Firebase Cloud Sync Status */}
       <div className="glass-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Realtime Sync Server</div>
-            <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Connects both phones for live two-device chat</div>
+            <div style={{ fontSize: '0.86rem', fontWeight: 700 }}>Realtime Cloud Sync</div>
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Powered by Google Firebase Realtime Database</div>
           </div>
           <span
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '4px',
-              fontSize: '0.68rem',
-              fontWeight: 600,
-              padding: '2px 7px',
+              gap: '5px',
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              padding: '3px 8px',
               borderRadius: '6px',
               background: 'rgba(16, 185, 129, 0.15)',
               color: '#34d399',
@@ -259,32 +259,11 @@ export const ProfilePage: React.FC = () => {
             }}
           >
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} />
-            Port 5001
+            LIVE
           </span>
         </div>
-
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <input
-            type="text"
-            className="form-input"
-            style={{ fontSize: '0.82rem', padding: '8px 10px' }}
-            placeholder="Laptop IP (e.g. 10.10.218.71)"
-            defaultValue={localStorage.getItem('shareacab_relay_ip') || '10.10.218.71'}
-            id="relay-server-ip-input"
-          />
-          <button
-            className="btn btn-secondary"
-            style={{ padding: '8px 12px', fontSize: '0.78rem', whiteSpace: 'nowrap' }}
-            onClick={() => {
-              const val = (document.getElementById('relay-server-ip-input') as HTMLInputElement)?.value;
-              if (val) {
-                localStorage.setItem('shareacab_relay_ip', val.trim());
-                window.location.reload();
-              }
-            }}
-          >
-            Connect
-          </button>
+        <div style={{ fontSize: '0.74rem', color: '#cbd5e1', marginTop: '6px' }}>
+          Syncs all rides, co-riders, and chat messages in real time across all devices worldwide over 4G, 5G, or Wi-Fi.
         </div>
       </div>
 
